@@ -1,0 +1,27 @@
+NOTICE - third-party software in this package
+=============================================
+
+Smart342 for Windows is an independent program. It is not affiliated with,
+endorsed by or supported by Scitex, Creo, Kodak or any successor. "Scitex" and
+"Smart 342" are names of their owners, used here only to say which scanner the
+program is for.
+
+The Volume folder contains Scitex's original Smart342(L) 2.2.0 software for the
+Apple Macintosh (the scanner driver, the control program, the scanner's
+motion-board programs, colour tables, settings and manuals). Smart342 for
+Windows runs that software unchanged so that the scanner behaves exactly as it
+did with its original Mac. This software:
+
+  * remains the property of its copyright owners and is NOT covered by the MIT
+    licence of Smart342 for Windows;
+  * is included only so that owners of a Scitex Smart 342L scanner can keep
+    using the scanner they own; it is no longer sold or supported;
+  * will be removed from this package if a rights holder asks - please open an
+    issue or contact the maintainer.
+
+The Volume folder also holds Adobe Acrobat Reader 3.0's installer and licence,
+as on the original Scitex disk (License_Reader.pdf in Documents).
+
+The program's interoperability with that software and with the scanner was
+made by studying how they work, for the purpose of using a lawfully owned
+scanner on current computers.

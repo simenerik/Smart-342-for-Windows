@@ -1,0 +1,916 @@
+SMART342 FOR WINDOWS - CHANGES
+==============================
+
+What is new in 0.5.0 (2026-10-18) - the first public test version
+-------------------------------------------------------------------
+* Fix streaks shows the right result. In a RAW, green is the CCD's own samples, but the scanner moves red and blue
+  sideways by part of a photosite to line them up with green, so the program's prediction for red and blue was wrong:
+  it showed about 0.5 - 0.6 % left when a RAW made with the stored vector had 0.08 % in all three colours (hardware,
+  18 Oct). The result, the dust check and the dust repair now use green; a repair is applied to all three colours alike
+  and limited to 3 %. 0.4.x could write red / blue errors of up to 11 % at the repaired places, and repaired only the
+  first 16 of them: if you stored a vector with 0.4.x and the result window listed dust places, run Fix streaks again.
+* Fix streaks names the selected holder plainly and asks for it to be the one in the scanner (the lens is chosen from
+  the holder in the window), and for a frame with clean, unscratched glass.
+* New RAW exposure "Long x2" and "Long x4" (experimental) for negatives and other dense film: one pass with 2 or 4 x the
+  integration time, saved as it comes. A colour negative uses only about an eighth of the scanner's range at Normal
+  exposure (hardware, 18 Oct: about 640 brightness levels in green); Long x4 gives about four times as many and less
+  noise. The positive (POS16) is matched to it in density. Not yet tried on the scanner as a single pass (the same
+  longer exposure has run many times as HDR's second pass).
+* Stop during a streamed RAW says at once that the whole crop is one picture and is finished and saved first (up to
+  about 2 minutes for a full 35 mm frame).
+* Any SCSI card: at every start the program asks the card's driver how much data one command may carry (Windows'
+  standard query - nothing is sent to the scanner), writes it to the log ("SCSI card limits") and warns if it is below
+  the 300 KB the Scitex software needs, with how to raise it. The transfer buffer is now aligned to memory pages, so a
+  300 KB read needs exactly 75 pages and meets every card's alignment rule. A command refused for being too large
+  (Windows error 87) is explained as such, instead of "the scanner is not answering".
+* User guide (README.txt) - a short basic part first, then the details and the tested hardware - MIT licence
+  (LICENSE.txt) and NOTICE.txt about the Scitex software in the package.
+* Hardware session 18 Oct (0.4.1): HDR +2 with step-and-hold on a full 35 mm frame - aligned in 9 bands, spill-over
+  check 0.025 %, no green marks; Stop during a streamed RAW waited for the picture, the scanner kept working; negative
+  with POS16; Fix streaks stored, RAW of the empty frame 0.08 % above noise (was about 1 %).
+
+
+What was new in 0.4.1 - better HDR
+----------------------------------
+* HDR no longer lets light spill from overexposed areas into the shadows. In the longer pass the CCD's green row can
+  spill charge from very bright areas (sky through leaves) into its neighbours; the merge took some of that as picture
+  and left small bright green marks next to bright areas. Now the longer pass must agree with the normal pass within
+  what the noise allows; where it is brighter than that, the normal pass is used (on the 13 Oct test slide: every mark
+  gone, 0.09 % of the shadow pixels affected, the shadows as clean as before).
+* HDR aligns the two passes more precisely: the shift between them is measured in bands along the scan and for each
+  colour, not once for the whole picture. Two passes do not land exactly on the same lines - they drift by up to
+  0.2 pixel over a 35 mm frame and red lies a little differently from green (measured on this scanner, with both kinds
+  of carriage motion). Left over now: about 0.04 pixel instead of up to 0.2.
+* HDR now uses step-and-hold too (at the lens's CCD resolution or finer, as other RAWs): the carriage stands still
+  while each line is exposed, also for the longer exposure, so the HDR is as sharp along the scan as a normal RAW.
+* The miner progress bar is now an easter egg: the normal progress bar, and now and then the miner.
+
+
+What was new in 0.4.0 - negatives, a guided streak calibration, a safe Stop
+---------------------------------------------------------------------------
+* Colour negatives (and black-and-white): with Media "Negative" the preview is shown as a positive, and every RAW of a
+  negative also gets a positive TIFF next to it ("... RAW16 POS16.tif", 16-bit, gamma 2.2) - about 95 % of the way,
+  ready for an editor. The orange mask is taken out and blacks and whites come out neutral: each colour is mapped in
+  density between its own thinnest and densest part of the frame (the holder and clear film left out), then to light
+  with one tone curve. The levels come from the preview's whole frame, so a crop of a detail keeps the frame's colours.
+  Tools > Negatives: the positive on / off, contrast (softer / normal / harder), "keep the shown preview's levels" for
+  a whole roll (the same colours for every frame; "each frame its own" goes back), and rotation of the positive (90
+  right, 180, 90 left). The RAW itself is never changed. Saved.
+* Fix streaks is now a guided measurement that works for any scanner (Tools > "Fix streaks"): clean the KEEP CLEAN
+  strip and the glass, put the holder in with the selected frame EMPTY, press Start. The program checks on the
+  preview that the frame is empty, makes 5 small RAWs of it (about 4 minutes; not saved), and makes the lens's clean
+  gain vector from their white measurements (256 lines each - the preview's 16-line ones are not used any more). Before
+  anything is stored it shows how much fine streaking the pictures would keep with the new vector and with the one in
+  use; dust that only the white measurement saw (on the KEEP CLEAN strip) is found and repaired from the pictures, and
+  a vector that is not better is not offered. Then, as before, the scanner software ends (it parks the scanner) and
+  the program starts again; only the settings on this PC change, nothing is written to the scanner. Set up this
+  scanner no longer stores vectors.
+* Stop while the scanner is sending a picture now waits until the picture is in (a few seconds for a preview, up to a
+  few minutes for a large RAW), then stops. Stopping in the middle of a picture left the scanner unable to calibrate
+  ("B01018 CCD timeout"; switching it off and on was needed). Stops during the calibrations stop at once, as before.
+* Large RAWs are streamed in one request by default (much faster than blocks: 145 s instead of about 24 minutes for a
+  full 35 mm frame at 2662 dpi). When the scanner's memory still holds a large RAW block, that RAW is made of blocks.
+* A new progress bar - a miner digging for a diamond - drawn sharp at any Windows display scaling (0.4.1: now and then).
+
+
+What was new in 0.3.1 - no more streaks along the scan
+------------------------------------------------------
+* Fine streaks along the scan, largest in bright areas, were in every scan (about 1 %, single columns up to 5 %). Cause:
+  before each scan the scanner software corrects every CCD pixel with a stored "clean gain vector" of the lens, and
+  the ones in the settings file came from another scanner. Tools > "Fix streaks" stores THIS scanner's own, made from
+  the white lines it measures before every preview and scan (0.4.0: a guided measurement with an empty frame, see
+  above). Only the settings on this PC change, nothing is written to the scanner; the scanner software ends as at
+  Quit (it parks the scanner) and the program starts again. The previous settings files are kept in the Logs folder.
+  The log shows for every calibration how much would be left in the scans ("left in the scans after ... correction":
+  about 1 % before, a few hundredths of a percent after).
+
+
+What was new in 0.3.0 - for any Smart 342L, not only the one it was developed on
+-------------------------------------------------------------------------------
+* The scanner is found on any SCSI ID: first in Windows' own list of SCSI devices (nothing is sent to them), then by
+  asking every ID. With several Scitex scanners you choose one; with none the program shows what it found and lets you
+  type the ID (it is on the scanner's front panel). The place is saved; Tools > "SCSI connection" searches again.
+* Your scanner's own parameters: the package now has the original Scitex settings file. At the first start the
+  scanner software stops because that file belongs to another scanner (number 96250969); the program then offers to
+  copy YOUR scanner's parameters from its flash disk into the settings - the same read-only copy as "Scanner(Flash
+  Disk) --> Mac" in the original Calibration program - and starts again. Nothing is written to the scanner. The
+  previous settings are kept as Smart342.Old, the parameter file read from the scanner is saved in the Logs folder.
+* Set up this scanner (offered at the first start; Tools > "Set up this scanner" at any time): for each lens you have
+  a holder for, choose the holder, put a piece of film with fine detail in it, and the program measures how far a lens
+  step moves the picture (10 RAWs of a small area it picks itself, about 7 minutes per lens). Pixel shift uses it.
+  Optional, if you have the Scitex focus chart: the lens's sharpness is measured too, and RAW sharpening (the SHARP
+  file) uses it. The results are saved in smart342.ini under the scanner's number.
+* Pixel shift predicts each next lens step better (a fit of all passes so far, held toward the measured step size,
+  with the slow drift between passes) - checked on all recorded pixel-shift runs.
+* RAW sharpening no longer sharpens along the scan for carriage motion blur when step-and-hold (on by default) has
+  already removed it.
+
+
+What was new in 0.2.0
+---------------------
+* A progress bar for every job, with "pass 2 of 3" and the time left - also for pixel shift, HDR, averaging, blocks,
+  multi-frame previews and scan lists. It learns from the scanner's own progress reports and from the passes already
+  made; until it knows enough it says "estimating the time".
+* RAW gamma (new setting under RAW exposure): "Linear (as scanned)" as before, or "Gamma 2.2" - the same RAW written
+  with a gamma of 2.2 (value = 65535 x (linear / 65535)^(1/2.2)), easier to view and edit. All measuring, averaging,
+  merging and sharpening is done on the linear values first. The file's description says which was used. Saved.
+* Step-and-hold is now a normal setting, on by default: Tools > "RAW step-and-hold". At the lens's CCD resolution or
+  finer (2662 dpi with the 35 mm lens, 1349 dpi with the 6x6 lens, and always with pixel shift) the carriage stands
+  still while each line is exposed - sharper along the scan, about 1.4 x the time. At coarser resolutions it is not
+  used (it would not help there).
+* Pixel shift uses the slow (constant-rate) lens moves by default - they avoid the carriage slips seen with fast moves.
+* A quieter window: the log shows the program's own messages only. Everything else (the scanner software's own
+  messages, the safety interlock, measurements) still goes to the log file. Tools > "Detailed log in the window" shows
+  all of it.
+* No more message about a "Scratch Folder" at the first start - it is answered by the program.
+* Scanner switched off or disconnected while the program runs: a clear message instead of a crash, and closing the
+  window works.
+* Tools menu tidied: the everyday RAW settings first, tests and research items under Tools > Diagnostics.
+* Help > About shows the version.
+
+
+
+SMART342 FOR WINDOWS  -  test version 0.1.27 (2026-10-11)
+=====================================================
+
+New in 0.1.27: B/W RAW from the green row; the lens shift test alternates normal / slow moves
+-------------------------------------------------------------------------------------------
+* What your 8-pass pixel shift scan of the focus chart (10 Oct, 22:33) showed: the CCD's three colour rows are not
+  equally sharp. Green holds the finest detail - contrast across at 58 / 67 lp/mm: green 0.15 / 0.10, red 0.13 / 0.08,
+  blue about 0.04 (blue is clearly softer); along the scan red and green are equal.
+* Mode "Greyscale (B/W)" + File format "RAW 16-bit TIFF" now gives ONE 16-bit channel: the green row's own samples
+  (before: three channels). The SHARP copy is one channel too. Mode "Color RGB" still gives all three.
+  The scanner's own B/W TIFF is unchanged: it already mixes mostly green - about 70 % green, 20 % red and 5 - 10 % blue
+  near greys (read from the colour table the original software loads into the scanner, in the simulator).
+  Trade-off of green alone: about 9 % more contrast at the finest detail than a standard luminance mix, but about a
+  third more sensor noise (one row instead of an average). For the most detail use it; to mix yourself, use Color RGB.
+* Lens shift test: after the straight series, each step is now taken twice in a row from above - once with normal
+  moves, once with slow moves (pictures 7 - 18 alternate). On 10 Oct the picture drifted about 0.3 px a minute in the
+  first minutes after the program started; the normal series ran during that drift and the slow one after it. Now
+  any drift affects both alike.
+* Tools > "RAW: the scanner's own colour alignment off": with the 35 mm lens the CCD samples 2662.14 dpi (exactly
+  2662.1376). For a RAW at the CCD's own sampling with the alignment off, type 2662.14. Any other resolution within
+  5 % of it (2529 - 2795 dpi) now stops with a message and makes no RAW (before: the RAW was made with the alignment ON, under your file name,
+  and the message asked for "2662.1", which was itself refused).
+* Crop, Scale and Resolution boxes: a decimal comma now counts as a point. Before, "6,12" in a crop box was sent to
+  the scanner software as 6 mm (none of your sessions were affected - all your crops had points).
+
+New in 0.1.26: slow lens moves (test) - the lens shift test gets a third series
+--------------------------------------------------------------------------------
+* What your tests and the motion board's own program showed (10 Oct):
+  - The lens carriage gets exactly the commands intended (checked in your SCSI recordings). Yet in both your lens
+    shift tests (17:38 and 19:40) the from-above series landed about one motor step off at its third picture
+    (-1.17 / -1.12 px), after the same commands both times, and stayed there. The motion board's count does not
+    notice: such a slip lasts until the program is started again (the driver sets the lens carriage's home position
+    only at start-up - checked in its code and in all your sessions).
+  - The motion board moves a motor in two ways (read in its program, "Main 11.11"): a constant-rate move, and a fast
+    move that ramps up to about 13 times that rate for moves longer than 15 steps. The driver uses the fast one for the
+    lens carriage (your scanner's motor parameters say "F") and the constant-rate one for focus and mirror ("S").
+* Lens shift test: now three series of six RAWs (about 8 minutes): straight; from above (exactly as before - where it
+  slipped twice); and from above with SLOW moves (the same positions, sent as the constant-rate move). The log says
+  for each series whether it found a jump, and compares the two from-above series.
+* Tools > "Pixel shift: slow lens moves (test)": pixel shift with slow lens moves (about 0.4 s instead of 0.2 s per
+  long move; a pass takes 25 - 45 s anyway). Off unless you tick it; saved.
+* Safety: the driver's own move command with its constant-rate code - the one it uses for focus and mirror, and has
+  its own slow-move function for, but has never sent to the lens carriage (that is new, and why it is a test); the
+  same positions, at the rate the lens carriage already uses for every short move; nothing is written to the scanner.
+  Each pass and each test picture logs whether its moves really went out slow.
+* Your test session of 10 Oct (19:26), the other results:
+  - Crop offset: measured on the edges of the chart's bar patch - the preview against your two 2000 dpi scans at the
+    left and the right end of the frame. The scanned area lies 0.08 - 0.14 mm left of and 0.03 - 0.06 mm above the
+    drawn crop: 1 to 2 preview pixels, about the same at both ends. The 0.3 - 0.4 mm seen on 7 and 8 Oct was not
+    reproduced with this more exact method, so nothing is corrected.
+  - Stop during a normal scan works: it stopped during the calibration and nothing was saved. Not tried yet: a
+    preview right after a Stop, and Stop during a RAW.
+
+New in 0.1.25: lens shift test fixed (your test of 10 Oct, 17:38)
+------------------------------------------------------------------
+* Its verdicts were wrong: one picture was measured a whole bar period off along the scan (+12.0 lines instead of
+  -0.6), and the "repeat error" mixed in the scan start's alternation along (every other scan starts ~0.65 line
+  apart - not the lens). Now each picture's along position is checked against the others and measured again from
+  there if it is far off (on your pictures: +12.013 -> -0.579), and repeatability is judged ACROSS only.
+* It now finds a JUMP: your from-above series moved 1.27 px per step, with one jump of -1.17 px (about one motor
+  step) after which the carriage stayed off - the same kind as in two of your pixel-shift runs. The log names it.
+  Straight, your test gave 0.93 px per step (the first step short, 0.62) and repeats within 0.16 px.
+* Your pixel-shift run with Medium sharpening (18:00) confirmed 0.1.24 on a new scan: contrast at 42 lp/mm 0.27 ->
+  0.73 across and 0.22 -> 0.59 along, as the model predicted (within ~0.05); the SHARP file equals the reference
+  filter to 1 count in 65535.
+
+
+New in 0.1.24: what your focus-chart tests of 10 Oct showed, built in
+--------------------------------------------------------------------
+* PIXEL SHIFT CHECKS EVERY PASS. On a crop with only repeating bars, the alignment could lock a whole bar period off
+  (your runs of 10 Oct: +3.46 and +27.86 px for -2.84 and -3.64; once 52.6 lines along for -2.2) - and such a pass was
+  combined. Now each new pass is checked against the passes before it: the same lens step must land within 1.5 px of
+  where it landed before, a new step within the range a step can move the picture (and, when the step size is known,
+  near where it predicts), and along within 0.04 mm of the others. If not, it is measured again from the expected place;
+  if that fails too, the pass is left out (the log says so, and the next pass uses another step). Checked on your
+  real passes: the three wrong locks are corrected to exactly the values found by hand, every other pass of your
+  10 sessions is accepted unchanged.
+  For pixel shift, still choose a crop with some non-repeating detail (an edge, text, grain) - on a pure bar field
+  the check catches the gross errors, not every one.
+* RAW SHARPENING REFITTED to the Scitex focus chart. The 0.1.22 model came from film grain and assumed 2 - 2.5 times
+  too little loss of fine detail; along, the chart and the sprocket-hole edge (s19) agree with each other and not with
+  the grain. The new model (sharper across than along, plus a faint halo) matches the chart's bars within 0.05 (rms
+  0.012) at 17 - 83 lp/mm. On your chart scans,
+  Medium now lifts the contrast at 42 lp/mm from 0.27 to 0.81 across and from 0.16 to 0.57 along (35 mm lens, one
+  pass); the noise cost per level is as before (x1.5 / 2.2 / 3.1 at 2662 x 5324 dpi; milder on a pixel-shift result).
+  Hard black-and-white edges get a bright fringe of roughly 10 - 20 % of the step, and the deepest blacks next to them
+  can reach 0 in the SHARP copy (the RAW itself is never changed).
+* LENS SHIFT TEST reports the step size from a straight line through all six pictures of each series (the first step
+  from rest can be short), and the scatter about it.
+* What your tests settled (no action needed): the scanner itself, not the old chart, sets the sharpness (the focus
+  chart falls to 10 % contrast at ~64 lp/mm across and ~52 along); cleaning the mirrors changed nothing measurable;
+  with the lens still, the picture holds within 0.3 px (a small settling after power-on); the lens carriage is more
+  repeatable approached from above (repeats within ~0.2 px, one slip of about a step in 8 passes) than straight
+  (0.6 - 0.8 px) - from above stays the default.
+
+
+New in 0.1.23: pixel shift refined, colour registration for colour film
+------------------------------------------------------------------------
+* Your full-frame pixel-shift RAW of 10 Oct (35 mm lens, streamed, 3 x 3729 x 4997 pixels) worked: every pass
+  complete, the scanner never had to wait. But one lens step moved the picture almost exactly one whole pixel
+  (-0.99), so pass 2 sampled the same places as pass 1, and the next step had to be guessed from that.
+* APPROACH FROM ABOVE: the lens carriage's steps are uneven (your lens test of 9 Oct, 6x6 lens: the first step 0.44
+  pixel, the next ones about 1.15, and back at 0 the picture was 0.46 pixel off; 35 mm lens, 9 / 10 Oct: the first
+  step 0.71, 0.89 and 0.99 pixel). Checked in the scanner software's own code and in all your sessions: it always brings the carriage to
+  the lens position with a move UP - when the carriage is above it, it first goes 1 mm (157 steps) below, its own
+  backlash correction - so the play was already taken up the same way; what differed was the last move: a long move
+  for pass 1, a short move of a few steps for the others. Now every pixel-shift pass - the first one too - goes 8 steps above its step and then down to it; the
+  scanner software then makes its own correction (1 mm below, then up), so EVERY pass ends with the same long move
+  up into its position, exactly as the software reaches the lens position itself. The carriage stays within the
+  range the software uses itself (never more than 32 steps above the lens position). Two or three motor moves more per pass.
+  Whether this makes the positions more repeatable on your scanner is what the new lens shift test measures (below);
+  if it says "straight" is better, add the line pixel_shift_approach=0 under [window] in smart342.ini.
+* PIXEL SHIFT STEPS are now chosen by the expected error of the result: after each pass the program predicts, from
+  the offsets measured so far, where each possible next step would put the samples, and takes the step that leaves
+  the finer columns closest to a sample (a step may also repeat an earlier one). Steps far beyond the measured ones are
+  not taken on a guess: their place cannot be predicted (the steps are uneven), so a near step that is as likely to
+  help is preferred. The normal setting stops when the samples of every finer column lie on average within 0.1 of
+  it (3 to 5 passes; before, "covered" within 0.35 was enough - on your 10 Oct frame that left half of the columns
+  0.21 off).
+* PIXEL SHIFT PASSES (Tools > Pixel shift passes; saved): "Up to 5" (normal, above) or "8" (all eight: the extra
+  passes put more samples near each finer column, which are averaged - less noise; 8 x one RAW's time, about 27
+  minutes for a full 35 mm frame). Only the passes nearest to each finer column are placed (a sample 0.1 column off,
+  put on the column, costs more than it gains). Tested on the step sizes measured on your scanner (a synthetic
+  picture, noise 80): 35 mm lens, 9 Oct: 8 passes error 53 against 83 normal; 10 Oct: 75 against 83; 6x6 lens: 51
+  against 76. Simulator end to end: 8 passes 44 against 80 for 3 passes.
+* LENS SHIFT TEST (Tools) now makes two series of six RAWs on a small crop - 0, +1, +2, +3, 0, +2 steps, first
+  straight to each step as before, then from above - and reports the step sizes, how even they are and how well the
+  positions repeat each way (about 6 minutes).
+* COLOUR REGISTRATION on colour film: 0.1.22 needed every part of the picture to match between the colours; on your
+  C-41 frame it found "no detail" and did nothing. Now each direction is judged on its own: it is corrected when most
+  parts of the picture agree (checked on your C-41 pixel-shift RAW of 9 Oct: along corrected, red -0.68 and blue
+  -0.20 line, afterwards within 0.08 line in 3 of 4 tiles; across the colours' pictures disagree, so across is
+  left as delivered). On the black-and-white chart (s18 / s19) both directions are corrected as before.
+* Your scanner stopping at "Quit" on 10 Oct: it had been switched off before the program was closed - not a fault.
+
+
+New in 0.1.22: holders fixed and extended, RAW sharpening, colour registration
+-------------------------------------------------------------------------------
+* HOLDERS (Cassette box) - an old error found and fixed. Up to 0.1.21 the Cassette box was one place off: the
+  window's choice went to the scanner software through its script interface, whose numbers are one off its own
+  menu. So "T 35mm" really scanned as "T 6 x 6" (6x6/6x7 lens, about 1349 dpi optical), "4 T35mm H" as "4 T35mm
+  V", and some choices could not be reached at all. Confirmed in your sessions: every "T 35mm" session ran "the
+  calibration pass for 6x7 cm formats" on the 6x6/6x7 lens; the 4 T35mm sessions sent cassette number 8 = 4 T35mm V.
+  0.1.22 chooses the holder in the scanner software's OWN cassette menu, the same way a click there does, and shows
+  that menu's holders - for transparencies (Original = Transparent):
+    Automatic, T 35mm, T 6 x 6, T 6 x 7, T 4 x 5, T 8 x 10 H, T 8 x 10 V, 4 T35mm H, 4 T35mm V, 3 T6x7 H,
+    Strip 35mm, Strip 6 x 7, Strip 4 x 5, All Board, Framed 8x35mm (8 frames, 35 mm lens);
+  for reflective originals: Automatic, 150mm, A4 H, A4 V, All Board-A3.
+  "T 35mm" now really is T 35mm: the 35 mm lens (about 2662 dpi optical, twice the detail across of before) - but
+  its preview area is smaller (about 47 x 47 mm): please preview once and check that your frame is inside it.
+  Choose the holder that matches your physical holder: the scanner software uses that holder's frame positions
+  (for the barcode holders it does not read the barcode on your scanner, and it gives no warning on a mismatch).
+  An old settings file is read as what it really selected (e.g. "4 T35mm V"), and the log says so.
+  Changing the holder (or Original) AFTER a preview: the scanner software only allows that after its own Restart
+  (the Restart button of the original Mac program). 0.1.22 does that Restart for you; the scanner software first
+  asks "Not all the crops were scanned. ... all the data relevant to your crops will be lost" - OK changes the
+  holder (then make a new preview), Cancel keeps the old one. (Up to 0.1.21 such a change was silently ignored.)
+* RAW SHARPENING (Tools > RAW sharpening: Off / Light / Medium / Strong; saved). Measured on 9 Oct (sprocket hole
+  and film grain, 35 mm lens): the scanner itself is sharp - your focus chart is the soft part - and fine detail
+  from 40 to 80 lp/mm on the film is RECORDED, but at low contrast (40 % at 40 lp/mm, 25 % at 50, 13 % at 60).
+  Sharpening restores it from a model of the optics and sensor (lens diffraction at f/5, the CCD cell, the
+  carriage movement, fitted to that measurement): every RAW gets an extra file "... SHARP-L/M/S.tif" next to it;
+  the RAW itself is not changed. Example, 35 mm lens, pixel shift or 2x along: at 50 lp/mm along 0.27 -> 0.56
+  (light), 0.75 (medium), 0.88 (strong), the grain and noise x1.5 / 2.2 / 3.2; other samplings differ a little -
+  the log gives the numbers for each file. Measured only for the 35 mm lens; the other lenses use the same model
+  with their own magnification and f-number (the log says so).
+* COLOUR REGISTRATION (Tools > RAW colour registration; on by default, saved). Found on 9 Oct: the scanner lines
+  red and blue up with green from its lens table, but at a finer step along than the CCD's own (pixel shift, and
+  any RAW above the optical dpi) it leaves red about 0.7 - 0.9 scan line and blue about 0.2 line off (measured in
+  your s18 and s19 scans). 0.1.22 measures red and blue against green in every RAW and moves them onto green
+  (green itself is never changed); the log and the file's description give the amounts. Checked on s18 / s19:
+  afterwards within 0.06 pixel (red), 0.08 (blue), measured with a separate method.
+* PIXEL SHIFT picks its own lens steps: pass 1 at 0, pass 2 at +1, then the step that fills the finer grid best,
+  predicted from the measured offsets (your 35 mm lens moved the picture 0.7 - 0.9 pixel per step, not always
+  the same). Fewer passes, fewer warnings.
+* RESEARCH: Tools > "RAW: the scanner's own colour alignment off". The scanner then does not interpolate red and
+  blue at all (each colour is the CCD's own samples); this program registers them. Not saved. Checked in a replay
+  of your s19 session: only the image processor's tables change; the motion and the safety interlock are the same.
+* Not changed: green is the scanner's own sampling (no interpolation at the optical dpi). The scanner has 5004
+  light-sensitive pixels per colour per line (from your scanner's own calibration lines), 4996 used.
+* How to test: see the guide from the chat (holder check with T 35mm; one RAW with sharpening Medium on a sharp
+  negative; the blank test for the column streaks).
+
+
+New in 0.1.21: PIXEL SHIFT RAW (EXPERIMENTAL) - 2 x finer across
+----------------------------------------------------------------
+* Your lens shift test (9 Oct 16:50) showed that the lens carriage moves the picture ACROSS the film, as a pure
+  sideways shift: +1 step 0.44 pixel, +2 steps 1.59, +4 steps 3.89, +8 steps 9.90 (6x6/6x7 lens). So several RAW
+  passes with the lens a step or two apart sample the film BETWEEN the CCD cells.
+* Tools > "Pixel shift RAW: 2x finer across (experimental)" (off at every start). With it ticked, Scan with
+  "RAW 16-bit TIFF" and a crop makes:
+  - each pass across at the CCD's own sampling (6x6/6x7 lens: 1349 dpi - no interpolation step), along at twice
+    that, or the highest the scanner software allows for the crop (2675 dpi with this lens);
+  - pass 1 with the lens where the scanner software puts it, pass 2 one motor step further, pass 3 two steps (always
+    the same direction - your test showed about half a step of play when the direction changes); more passes (up to
+    5) only if the measured positions do not yet cover the finer grid;
+  - each pass's real position is MEASURED from the picture (the step sizes are not exact), the brightness of each
+    pass matched to pass 1 (the light falls about 1 % at 2 steps), and every sample put where it was taken on a grid
+    2 x finer across - no sharpening, no invented detail;
+  - one TIFF "... PS2x.tif": e.g. 2698 dpi across x 2675 dpi along (both stored in the file); the log and the file's
+    description list the passes, their measured offsets and how well the grid is covered.
+  Your resolution setting is not used for pixel shift. The crop must fit one RAW request (1,000,000 pixels per
+  pass, e.g. about 18 x 9 mm), or turn on Tools > Streamed RAW for larger crops. "Keep each pass" also saves the
+  single passes. If the passes do not line up (WARNING in the log), pass 1 is saved as a plain RAW.
+* Expected gain: about 1.4 - 1.6 x the real detail across (an estimate: the lens's contrast at those fine details sets
+  it - to be measured on your scanner). Each pass takes as long as one RAW (about 20 - 30 s for a small crop).
+* Checked in the simulator (a model of a sideways lens motion: offsets measured within 0.004 pixel, result equal to
+  the exact picture within the noise, no stripes) and in a synthetic test with your scanner's own offsets (error 46
+  against 1108 for one pass; detail at 1.4 x the old limit recovered). Reviewed by a separate reviewer; fixed from
+  it: the rule for "grid covered" (now checked the way the samples are actually placed).
+* Also: after every RAW (normal too) the log shows the scanner's own timing counters, so normal and streamed RAWs
+  can be compared. In your RAW check, the streamed RAWs had 38 and 218 "controler - bip timing violations" - checked
+  row by row against the normal RAWs: no line lost, repeated or changed. 0.1.21 notes them instead of warning.
+* How to test (about 5 minutes): preview; draw a crop of about 6 x 6 mm on sharp detail (grain, an edge); Tools >
+  Pixel shift RAW; File format "RAW 16-bit TIFF"; tick "Keep each pass"; Scan. Then send the Logs folder and the
+  PS2x file (and pass 1) - or compare them yourself at 200 - 400 %.
+
+
+New in 0.1.20: RAW check judged on what matters
+-----------------------------------------------
+* Your RAW check of 9 Oct 16:47 (0.1.19): the first STREAMED RAW on your scanner worked - S went 1.4 times round the
+  scanner's buffers, arrived complete, the scanner kept answering. It was marked "NOT the same picture" only
+  because it lay 0.76 pixel (along) from N, and 0.1.19 allowed 0.5. Your data shows that two NORMAL RAWs of the
+  same place differ by that much too (N sits 0.5 pixel along from where it should be in Q): the scanner's own
+  repeatability. Measured from the scanner's raw data in the log: the shift is the same in every band of S, so no
+  line was lost or repeated (also not where the buffers were reused, near row 290).
+* So the check now asks what matters for streaming: is the picture complete, without a lost or repeated line?
+  - the whole shift may be up to 2.5 pixels (the scanner's repeatability);
+  - the picture is compared in bands of 50 rows: the shift must stay the same from band to band (within 0.4
+    pixel). A lost or repeated line makes a step of about 1 pixel - tested on your own S with a line cut out.
+* If a step's picture differs but the scanner still answers, the check now goes on to the next step (result D)
+  instead of stopping - one run gives all results.
+* Please run Tools > RAW check again (it asks whether to run all steps again: OK).
+
+
+New in 0.1.19: the RAW size limit found in the scanner's firmware; streamed RAW (EXPERIMENTAL)
+----------------------------------------------------------------------------------------------
+* Why the RAW of 8 Oct stopped the scanner (found in the scanner's own controller program, SCSI.EXE 1.C8): for a
+  RAW (Max Detail) the controller keeps the WHOLE picture in its memory - 6 bytes per colour pixel in 7,077,888
+  bytes, so at most 1,179,648 pixels (e.g. 1152 x 1024). The RAW of 8 Oct (2618 x 3783) was 8.4 times that: the
+  controller printed "Non availble mem for BIP activity" and ended its program - the scanner stopped answering.
+  Every RAW and preview your scanner has made is under the limit. A normal scan is buffered differently: it
+  streams through as many blocks as fit, which is why normal scans of any size work.
+* The RAW size test is gone (4 of its steps were over the limit and would each have stopped the scanner). Instead:
+  - one RAW request is at most 1,000,000 pixels (85 % of the limit - so that a normal scan straight after it still
+    has room in the scanner's memory); a larger crop is made of blocks of that size - much bigger blocks than
+    before (a whole 35 mm frame at the 35 mm lens's 2662 dpi: 12 blocks instead of 36);
+  - the safety interlock now also checks every RAW/preview/scan request against the controller's memory rule and
+    never sends one the controller would stop on (a last line of defence - the window's own limit comes first). If
+    it ever holds one back, the log says SAFETY and the scanner software stops that operation by itself; its message
+    "Motion board S/W loading failed" then comes from this safety stop, not from the motion board. Please send the
+    Logs folder if you ever see it.
+* BEFORE THE FIRST USE OF 0.1.19: switch the scanner off and on once. The scanner keeps the memory of its last RAW
+  until it is switched off; the interlock assumes at most what 0.1.19 itself can leave there.
+* Streamed RAW (EXPERIMENTAL, Tools > Streamed RAW for large crops; off at every start): a large RAW in ONE request.
+  The request is sent as the controller's "final scan" type, so it streams through its memory like a normal scan,
+  while the picture data stays the RAW (Max Detail) data (the data format is set by the driver's own image-processor
+  settings, not by this request type - checked in the firmware: the same transfer code serves both). No blocks, no
+  calibration per block, no stitching. Checked in the simulator and in the firmware's code - not yet on your
+  scanner, and the scanner has never had to reuse its buffers in a traced session. Run the RAW check first:
+* Tools > RAW check (a few minutes; make a preview first, a slide in the holder):
+    N  normal RAW, 600 x 400 pixels - the reference
+    Q  normal RAW, 1000 x 1000 pixels - confirms the new block size (it also leaves only about 1 MB of the
+       scanner's memory free, so the streamed steps must reuse their buffers several times)
+    S  the area of N again, STREAMED - must give the same picture (the log shows shift and match)
+    L  STREAMED RAW of 1200 x 1100 pixels - more than the scanner could keep whole; must arrive complete, with the
+       pictures of N and Q found inside it at their places (a lost or repeated line would move them)
+  If a step stops the scanner, switch it off and on, restart this program and choose the check again: that step is
+  recorded as F (the check offers to start again from the beginning). The results are in smart342.ini [rawcheck];
+  the log says "STREAMED RAW WORKS" when S and L passed.
+  After every streamed RAW the log also says whether the scanner's buffers ran full ("wait counter is 0" / "buffers
+  were full N times - it had to wait for the computer"): the program reads the scanner's own timing counters with
+  the same read-only command the scanner software uses after every normal scan (the scanner software calls them
+  "host - controler" and "controler - bip timing violation"; the second one gives a WARNING if it is not 0). In the
+  firmware a full buffer makes the controller leave the next line where it is until the computer has read (nothing
+  is overwritten, no error). The scanner software itself logs "Num stop_spiral" after every spiral preview,
+  Max Detail and scan - the motion board's count of times it stopped and resumed the scan motion. A run with "buffers were full", a complete
+  picture and "Num stop_spiral" above 0 would show that the scanner waits for the computer during a RAW too.
+  Please send the Logs folder afterwards either way.
+* Not changed: passes and HDR with blocks are still one plain pass; with Streamed RAW on, passes and HDR work as
+  for small RAWs (each pass is one streamed request).
+
+New in 0.1.18: lens shift test (research - the first step towards pixel shift)
+-------------------------------------------------------------------------------
+* Tools > Lens shift test: does moving the lens carriage shift the picture ACROSS the film? If yes, several passes
+  with the picture moved by a fraction of a CCD cell can sample between the cells ("pixel shift"): about 1.4 - 1.6
+  times the real detail across (estimate - to be measured), e.g. about 3700 - 4300 dpi with the 35 mm lens.
+  How to run it: preview, draw a small crop on sharp detail (film grain or a sharp edge), Tools > Lens shift test.
+  The same small area is scanned 6 times as RAW at the lens's optical resolution, with the lens carriage 0, +1, +2,
+  +4, +8 and again 0 motor steps (6.35 micrometres each, about 0.05 mm for 8) from where the scanner software puts it -
+  for the scan only, after the white calibration. The log shows how far the picture moved per step, across and
+  along, and what a sideways lens would give (1.24 px per step for the 6x6/6x7 lens, 1.57 for the 35 mm lens).
+  Please run it with the round T 35mm holder (6x6/6x7 lens) and, if you can, with 4 T35mm (35 mm lens); send the logs.
+* Safety: only the driver's own motor commands, at most 8 steps from the normal position (the carriage normally
+  travels about 200 mm); the next calibration puts it back by itself; nothing is written to the scanner.
+
+New in 0.1.17 (night): large RAWs made of several blocks
+--------------------------------------------------------
+* A RAW larger than one block your scanner is proven to take is no longer refused: it is made of several smaller
+  RAW blocks (64 pixels overlap, plus 8 pixels margin around the crop) and put together here:
+  - each block is lined up with what is already placed, to a fraction of a pixel, by matching the overlap (the
+    log shows the shift per block - expect well under a pixel);
+  - brightness is matched per colour in the overlap (expected within a fraction of a percent; the log shows it);
+  - the blocks are blended over the overlap, so there is no visible seam.
+  The block size is the RAW size limit (Tools > Show the RAW size limit): 512 x 698 pixels until the RAW size test
+  has found more. Example: 24 x 36 mm at 2000 dpi = 1890 x 2835 pixels = 25 blocks at 512 x 698; each block takes
+  about half a minute (the scanner calibrates before each one), so about 12 minutes. A larger limit from the size
+  test means fewer, faster blocks.
+  - Checked in the simulator with a picture fixed to the bed and deliberate position errors and brightness
+    differences per block: the result equals the picture of the whole crop within the noise, no seams.
+  - Not yet on your scanner. First test: a RAW of a crop about 2 x the limit (e.g. 12 x 12 mm at 2000 dpi), and a
+    normal TIFF of the same crop to compare.
+  - Passes (averaging) and HDR are not combined with blocks yet: a RAW made of blocks is one plain pass.
+  - If a block cannot be placed with certainty the log says WARNING for that block - please send the logs then.
+  - Stop during a RAW made of blocks (or passes, or a test) takes effect at the end of the current block: the
+    scanner software is busy with a block until it is done; nothing is saved from a stopped RAW.
+* Reviewed by a separate reviewer before release; fixed from that review: the order of the blocks across for
+  transparent originals (crop coordinates are those of the mirrored preview), a sub-pixel bias at block corners,
+  black areas next to bright ones, a wider search for the block position, Stop pressed while nothing had started
+  yet (the window stayed busy), and a stricter "scanner not answering" rule (two failed commands in a row).
+
+New in 0.1.16 (evening): Stop button, focus test and focus offset (EXPERIMENTAL)
+--------------------------------------------------------------------------------
+* Stop (next to Scan): stops a running preview, scan or RAW the way the original's own queue window does
+  (deleting the running item): the scanner software stops all motors, resets and re-initialises the scanner and
+  reports back; nothing is saved from that job; a scan list stops too. Checked in the simulator: the stopped scan
+  is not written, and the next preview and scan work normally. Not yet tried on your scanner - please try it once
+  on a normal scan.
+What is known (from the driver and your logs): the scanner has a FOCUS motor (motor 1; the driver's own motor table
+calls it "FOCUS", 80 steps per mm). Before every preview and scan the driver puts it at the scanner's own stored
+focus position (10.198 mm on your scanner) - for every lens. The original moves it away from there only for the A3
+lens (L60), with its "defocus" option for printed originals (up to +0.5 mm). There is no autofocus. Not known yet:
+whether the focus motor also focuses the film lenses (35 mm, 6x6/6x7, 4x5) - that is what the test finds out.
+
+* Tools > Focus test: make a preview, draw a small crop on sharp detail (film grain or a sharp edge), start the
+  test. The same small area (at most 400 x 400 pixels) is scanned 6 times as RAW at the lens's optical resolution,
+  with the focus motor at 0, -0.5, -0.25, +0.25, +0.5 and again 0 mm from the stored position, and the sharpness
+  of each is measured (the repeat of 0 shows how much the measurement varies by itself). About 3 minutes.
+  - If the sharpness does not change: this lens does not use the focus motor; nothing is changed.
+  - If it changes: the log shows the sharpest offset and it becomes the focus setting for THAT lens.
+  The six RAW files ("focustest_<offset>") are saved so you can compare them yourself.
+* Tools > Focus offset: set or reset the offset by hand (-0.50 .. +0.50 mm); kept per lens in smart342.ini.
+* Safety: the focus motor stays between -0.5 mm (inside the range it moves through from its home position at every
+  start-up) and +0.5 mm (the original's own defocus range) of the stored position. Only the driver's own motor
+  commands are used; nothing is written to the scanner. The next preview or scan puts it back to the stored
+  position by itself before applying the offset again.
+* Please test with the round T 35mm holder (6x6/6x7 lens) and, if you can, 4 T35mm (35 mm lens), 4x5 and 8x10, and
+  send the Logs folder.
+
+About "5000 dpi": your scanner reports its CCD itself as "ccd head 5000" - 4996 cells of 7 micrometres per colour -
+and the driver's own pixel counts in your sessions match it exactly. With the 35 mm lens (magnification 0.734)
+that gives about 2660 samples per inch ACROSS the film. ALONG the film the carriage steps at whatever resolution
+you choose (it can step far finer), so a "5000 dpi" scan has 5000 real lines per inch along, but its 5000 pixels
+across are interpolated from about 2660. Published figures of "5160 dpi" for 35 mm on a Smart 340 are about twice
+what your scanner's CCD gives for every lens, which would fit a CCD head with twice the cells - not the one in
+your scanner (not verified further).
+
+New in 0.1.15 (after the RAW that stopped the scanner, 2026-10-08 17:48)
+------------------------------------------------------------------------
+What happened at 17:49 (from your logs): the RAW asked the scanner for one block of 2618 x 3783 pixels at
+2675 dpi. Right after the scanner's image processor received the setup for that block, the scanner stopped
+answering on SCSI: the next command got no answer for 60 s, Windows gave up (error 1117), later commands found
+the device gone (error 1167). The carriage was standing still at the start position (the scan motion had not
+been started), and nothing was written to the scanner. "Motion or door Problem ! Emergency stop." was NOT a door
+fault: the driver turned the failed command into that text. The original Scitex software never asks for a
+Max Detail larger than 500 x 500 pixels; RAW mode is the first to ask for big ones. On your scanner blocks up to
+512 pixels wide have always worked (every preview, the RAWs at 16:43); 2618 did not. If the scanner still
+behaves oddly: switch it off and on.
+
+* RAW size limit: a RAW larger than what is proven on your scanner is refused BEFORE anything is sent, with a
+  message in the log (and "too large for RAW!" under the resolution when the format is RAW). Proven so far:
+  up to 512 pixels wide and 698 lines. Larger RAWs come back when the size test (below) has found the real
+  limit, and later as tiles (several smaller RAW blocks put together).
+* Tools > RAW size test: finds the largest RAW block your scanner takes (you chose to test it). How to run it:
+  - Holder: the one you will use for RAW. Put a slide in, make a preview, draw a crop on the middle of the
+    picture (the test blocks are centred on it; without a crop on the middle of the preview).
+  - Tools > RAW size test. It scans RAW blocks at 2000 dpi in colour, one size after the other: 768, 1024, 1536,
+    2048, 2618 pixels wide (698 lines), then 1024, 2048, 3783, 6000 lines (512 wide), then the largest of both
+    together. Each step takes about half a minute and is saved as "rawtest_<width>x<lines>.tif".
+  - When a size is too large the scanner stops answering, like at 17:49. The log then says "STOPPED THE
+    SCANNER". Switch the scanner off and on, close and restart this program, make a preview, and choose the test
+    again: it continues with the next series. It knows which step stopped the scanner even if the program had to
+    be closed (smart342.ini, [rawtest]).
+  - At the end the log shows the new RAW size limit; it is used from then on (smart342.ini, [raw]).
+  - Please send the Logs folder afterwards (the scanner's own log lines show the input pixels per step, which
+    tells us WHICH number the limit is on).
+* If the scanner stops answering, the log now says so plainly ("SCANNER NOT ANSWERING ...") and the program no
+  longer waits a minute for each further command.
+* Lens and real resolution: after a preview the log names the lens the scanner used and how many dpi the CCD
+  really samples across the scan; the resolution line shows it as "optical". The scanner has four lenses (from
+  its own parameters: focal length, magnification, 4996 CCD cells of 7 micrometres):
+    35 mm lens (L110)    about 2660 dpi across, 47.7 mm wide field
+    6x6/6x7 lens (L89)   about 1350 dpi across, 94 mm wide field
+    4x5 lens (L67)       about  780 dpi across, 162 mm wide field
+    A3 lens (L60)        about  405 dpi across, 312 mm wide field
+  Which lens a holder uses is decided by the scanner software. Checked on your scanner (the lens carriage
+  position in every session): the round T 35mm holder uses the 6x6/6x7 lens (all sessions since 19:15 on
+  7 Oct, including the 2000 dpi scans), the 4 T35mm H holder the 35 mm lens (18:43 session). Other holders: the
+  log will now tell you. Across the scan, resolutions above the optical value are interpolated by the scanner;
+  along the scan the carriage really steps at the chosen resolution. So for 35 mm film the 4 x 35mm holder gives
+  about twice the real detail across of the round T 35mm holder.
+  [CORRECTED in 0.1.22: up to 0.1.21 the Cassette box was one place off - "T 35mm" was really T 6 x 6 (hence the
+  6x6/6x7 lens) and "4 T35mm H" really 4 T35mm V. In 0.1.22 "T 35mm" uses the 35 mm lens.]
+* Focus: the scanner has no autofocus. Each transparency lens sits at a fixed, factory-set position; the focus
+  motor is used only for the L60 lens (reflective originals / large holders), set from the scanner's own
+  parameters ("L60 focus position" 10.198 mm) plus the original's "defocus" option for printed originals.
+  More on a manual focus mode in the notes from Claude.
+
+New in 0.1.14 (after your first tests of 0.1.13 on the scanner, 2026-10-08 16:28 - 16:54)
+-------------------------------------------------------------------------------------
+* A file name without an extension (e.g. "scan2000dpiNOsharp") now gets one, taken from what the file really is
+  (.tif, .psd, .eps or .pct, from its first bytes), so Windows can open it. The log says when it was added.
+  Files you already have: add ".tif" to the name.
+* RAW passes and HDR: the original asks before every new Max Detail of the same crop "A Max detail for crop ...
+  already exists. Do you want to perform a new Max Detail and delete the previous one?" - you had to click OK for
+  every pass. While a RAW scan runs the window now answers OK itself (the log says so).
+
+What your tests showed (checked from your files and logs):
+* RAW 16-bit: same area and orientation as the normal TIFF of the same crop (match 0.9945, 2-4 pixels apart at
+  2000 dpi), 411 x 273 pixels, 14-bit mode.
+* RAW passes: the carriage comes back to within 0.1 pixel at 2000 dpi (about 1 micrometre) - very repeatable. The
+  scanner's own noise is independent from pass to pass (as it should be for averaging), about 27-36 (16-bit units)
+  in the shadows and 110 in the midtones per pass, so 4 passes halve it. On this film the grain and fine detail
+  are as strong as that noise, so the visible gain is smaller than "half".
+* HDR +1 stop: the driver redid the dark calibration at the longer time (1.9 -> 3.8), planned the slower carriage
+  itself (prescan 7 s instead of 3 s - the carriage really follows the longer time), the picture came out 1.991
+  times brighter for 2 times the time (linear, as expected), the two passes line up as a plain shift (no
+  geometry change) and the shadows of the bright pass show no streaks. On this frame only part of the picture is
+  dark enough to use pass 2 (31 % blended).
+* Negatives: N_Default and AutoVPS both applied (a positive target scanned as negative - for real judging use a
+  real negative).
+* The scanned area again sits about 0.3 mm left of the drawn crop (also in the 0.1.13 scan before) - a correction
+  will come when it is measured on a second, different crop.
+
+
+Please test in this order: the 0.1.11 items (RAW, gang masks), then RAW passes (0.1.12), and only then HDR.
+
+New in 0.1.13
+-------------
+* Fixes from an independent review of the RAW code (nothing of this has run on the scanner yet, so it was checked
+  once more by a separate reviewer; memory safety, the TIFF writer, the conversion and the alignment arithmetic
+  were all confirmed clean, also under memory checkers):
+  - A scan list entry whose frame had no preview any more (e.g. after a new, interrupted preview) made the list
+    wait for ever. Now the list stops with a message.
+  - During RAW passes the crop or settings could be changed in the window between passes, and the next pass used
+    the new values. Now every pass uses the settings taken when Scan was pressed.
+  - A RAW scan that failed (file not found, disk full, out of memory) let the scan list carry on and left the
+    status line saying "running". Now it stops the list and says "not finished".
+  - Lining up passes: on very fine texture the coarse search could pick a far-away wrong position (the pass was
+    then left out, so no bad picture, but no averaging either). Now several candidates are refined to sub-pixel
+    accuracy and the best match wins; the channel with the most detail is used (the sum of the channels could
+    cancel detail). The reviewer's failing cases now line up exactly and are part of the tests.
+* RAW exposure: HDR +1 stop / +2 stops (EXPERIMENTAL). Two passes of the crop: pass 1 normal, pass 2 with 2 or 4
+  times the CCD integration time. The dark parts of the picture are taken from pass 2 (less noise in the
+  shadows), the rest from pass 1.
+  How it works (found in the driver; the order checked in the simulator AND in the driver's own log lines from
+  your real sessions): before every prescan the driver sets the light and the integration time itself (your
+  sessions: 1.9 - 3.0; your scanner's own scale goes from 1.3 to 25), calibrates dark and white at that time,
+  then plans the motion from the time and takes the picture. For pass 2 the window sets the longer time, with the
+  driver's own function, right after the white calibration and before the motion is planned:
+  - the white calibration stays that of the normal time, so the picture comes out 2 or 4 times brighter and the
+    highlights clip - that is the point;
+  - the dark calibration is done again at the longer time, with the driver's own routine and the same arguments
+    the driver used a moment before (the driver does exactly this itself for final scans, when it lengthens the
+    time after the white calibration - seen in your 20:39 session: "match integ to scale 2.26 -> 2.2", then
+    "Do dark calibration"). The carriage goes to its dark position and back, as in every calibration;
+  - the driver plans the motion for the longer time itself (simulator, 4 x: 265.8 -> 66.4, "in range"). The
+    commands to the motion board are the same as for a normal pass; only the number of steps and the line timing
+    are sent, the stepping follows the lines. Whether the picture is geometrically identical on your scanner is
+    checked from the result (see below);
+  - the time is never set above the scanner's own maximum (25); only that one prescan is affected (the next one
+    starts its light setting from 1.3 again), and only a RAW pass: if anything else (a preview) comes while it is
+    set, it is left alone and the setting is dropped. No stored parameters are written; the interlock is
+    unchanged.
+  Nothing is assumed about the result: the brightness ratio and dark offset are measured from the pictures (8 x 8
+  blocks away from clipped highlights), the passes are lined up on the dark parts (where the merge uses pass 2),
+  and nothing is merged (the log says why) if the longer time was not set, if the dark calibration at the longer
+  time did not run, if the driver reported the motion out of range, if pass 2 is not brighter, or if the two
+  passes differ by more than a plain shift (geometry). A measured brightness ratio more than 25 % off the time
+  ratio is noted in the log.
+  Pass 2 is used where the normal pass is below 3 % of white within 4 pixels (blended out by 8 %); above that, and
+  next to anything brighter, pass 1 is used unchanged. The normal and the bright pass are always saved too
+  ("... RAW16 normal.tif", "... RAW16 bright x2/x4.tif"); the result is "... RAW16 HDR+1.tif" / "HDR+2.tif" in the
+  normal pass' brightness scale. The HDR choice is not remembered between starts (it starts at "normal").
+  Checked with test programs (known exposure ratio, dark offset and shift): ratio and offset found exactly;
+  shadow noise 8.0 -> 4.5 at +1 stop and 8.0 -> 3.7 at +2 stops, the rest unchanged; next to bright, clipped
+  edges never worse than the normal pass. A second independent review of the HDR code found two real faults
+  (fixed): next to clipped highlights the merge put interpolation ringing into the shadows (365 against 8), and
+  the setting could stay armed after a failed pass. Both are now part of the tests.
+  NOT known before your test: whether the picture is geometrically the same at the longer time (the log's 3 x 3
+  tile shifts show it), how much brighter it really is (log: "fit ... g" against the time ratio), whether the
+  shadows of pass 2 are clean (no streaks), and how long it takes.
+
+How to test 0.1.13 (after the 0.1.11 and 0.1.12 tests)
+-----------------------------------------------------
+Please do the 0.1.11 and 0.1.12 tests first (a normal scan, a RAW, RAW passes) - HDR builds on all of them.
+1. A dense slide (dark shadows), T 35mm, Preview, a crop of about 10 x 10 mm, 1000 dpi, RAW 16-bit TIFF,
+   RAW exposure "HDR +1 stop", Scan. Note how long pass 2 takes against pass 1 (the log shows both).
+2. If that worked: the same with "HDR +2 stops".
+3. Compare the HDR file with the "normal" file in the shadows (and look for streaks along the scan in the
+   "bright" file's shadows). Send the Logs folder (the lines starting with "RAW HDR" are the ones that matter).
+
+
+New in 0.1.12
+-------------
+* RAW passes (multisampling for less noise). With File format = RAW 16-bit TIFF, "RAW passes" (1, 2, 3, 4, 6, 8,
+  12, 16) scans the same crop several times, lines every pass up with pass 1 and averages them. Random noise of
+  the scanner (sensor and electronics) drops by about the square root of the number of passes: 4 passes about
+  half. Fixed patterns (streaks, uneven illumination) are the same in every pass and stay.
+  - Lining up: the carriage may not come back to exactly the same place, so each pass is measured against pass 1
+    (whole pixels over up to +-1000 pixels, then to about 0.01 pixel) and shifted with Lanczos-3 interpolation;
+    a pass that is a whole number of pixels off is copied without interpolation. Pass 1 is never interpolated.
+  - The log shows for every pass: how far it was shifted, how well it matches, the same measured in 9 parts of the
+    picture (to see whether the shift is the same everywhere), and the difference to pass 1 by brightness. These
+    lines tell us how repeatable your scanner is and how much noise it has - please send them.
+  - A pass that does not match pass 1 is left out of the mean (log: "left out"). Detail that repeats (a screen,
+    fabric) is matched at the nearest position.
+  - "Keep each pass" also saves every pass as it came from the scanner ("... RAW16 pass1.tif" ...), the mean is
+    "... RAW16 x4.tif". Useful for the first tests, then leave it off (it takes disk space).
+  - Time: each pass is a full RAW scan (the driver also does its own light setting and dark/white calibration
+    before every pass - as before every preview in the original, working memory only; the safety interlock is
+    unchanged). Lining up and adding one pass took under a second for 8 x 10 at 600 dpi (measured on the
+    development machine). Memory: about 8 bytes per sample (a 156 MB RAW needs about 650 MB while averaging).
+  - Checked: a test program with known shifts and noise (shifts found within 0.01 pixel, also 90 pixels off;
+    noise of the mean as expected for 2 to 16 passes; pictures that must not be lined up are handled). End to end
+    in the simulator with a textured noisy test picture and a different sub-pixel position per pass: each pass
+    80 off the noise-free picture (the noise), the mean of 4 passes 37.
+  - Not known yet: how far your passes are apart and how much they differ - the first real run will show it.
+* Exposure (HDR) - investigated, not in this version. The driver sets the light and the CCD integration time
+  itself before every prescan (in the simulator 1.3 then 1.4) and then calibrates dark and white at that time, so
+  a longer exposure would be calibrated away; the integration time also sets the CCD cycle time and the image
+  processor's line timing. A longer exposure only for the picture data is possible in principle but needs more
+  study and a careful first test on the scanner. Details in the project notes.
+
+How to test 0.1.12 (after the 0.1.11 tests below)
+---------------------------------------------------------
+1. A slide with dark areas, T 35mm, Preview, a crop of about 10 x 10 mm, 2000 dpi, Format RAW 16-bit TIFF,
+   RAW passes 4, tick "Keep each pass", Scan. Then the same with RAW passes 1.
+2. Compare "x4" with "pass1" in the shadows (zoom to 200-400 %).
+3. Send the Logs folder.
+
+
+New in 0.1.11
+-------------
+* Gang masks (several frames in one cassette, e.g. 4 T35mm H, 3 T 6x7 H): Preview now previews every frame of the
+  chosen cassette, one after the other, as the Mac program's Preview button does. The "Frame" box above the
+  preview picks the frame that is shown, cropped and scanned ("of 4 (this cassette holds 4 frames)"). The scan
+  list remembers the frame of each entry, so one list can take crops from several frames. Found in the original:
+  its Preview button runs Handle_Preview_Button for frames 1 .. number of frames; opening a frame's thumbnail
+  calls start_preview(frame); the scan request carries the frame number. Checked in the simulator: 4 previews,
+  the scanner carriage goes to a different place for each frame, a scan of frame 3 is made at frame 3.
+  "Automatic" (the original recognises the masks itself) cannot be tried in the simulator; the window asks the
+  original after the first preview how many frames it found and waits for them - please try it once.
+
+* RAW 16-bit TIFF (new file format choice): the scanner's own 12-bit data of the crop at the scan resolution,
+  without gradation, colour table, sharpening or the 8-bit step - for any original and cassette (35 mm, 120,
+  4 x 5, 8 x 10, gang masks).
+  How it works: the original has a "Max Detail" function (User Guide 7.6): a prescan of a small area at the final
+  resolution, kept as 12-bit data (the preview path, before any image processing). The window asks for a Max
+  Detail of exactly your crop at your resolution and scale, and writes it as an uncompressed 16-bit RGB TIFF:
+    - "<date-time> <file name> RAW16.tif" in Scans, tagged with the resolution, same pixel size as a normal scan
+      of the same crop (checked: 2000 dpi on 24 x 36 mm = 1890 x 2835 in both).
+    - Values: your scanner works in its 14-bit mode (the driver checks use_Inpol_14_bit), and the driver squeezes
+      14 bits into 12 with a fixed table (unchanged up to 255, above that 1/4.2 per step - read from the driver,
+      not assumed). The window undoes that table (each value goes to the middle of its 14-bit step) and writes
+      14-bit x 4, so 16383 -> 65532. If a scanner does not use the 14-bit mode, the 12-bit value x 16 is written.
+      The log says which. Linear data as the scanner measured it: it looks dark and flat until you set levels or
+      a curve. Negatives are not inverted. Always RGB, also with Mode = Greyscale (the scanner's prescan is RGB).
+    - Orientation: for transparencies the data is mirrored left-right, like the preview display and your real
+      normal scans (checked on your 19:46 and 20:23 scans: the final scan is the mirror of the preview data).
+      The Mirror tick mirrors it once more. Reflective originals: not mirrored (not checked on the scanner yet).
+    - The allowed resolution range is the normal scan's (the same check in the original refuses the same crops).
+    - A preview of the frame is needed first.
+  Needed for this: the driver's prescan has a counter that only counts to 32767 samples per piece of data, which
+  the original's own small Max Detail areas never reach. Larger areas made the driver loop for ever (found in the
+  simulator). 0.1.11 widens that counter in memory when the driver is loaded (6 instructions, each checked to be
+  exactly the expected one first, nothing written to disk or scanner; if the driver is different, RAW is switched
+  off and the log says so). Checked in the simulator up to 4488 x 5787 pixels (8 x 10 at 600 dpi, 156 MB).
+  Not known yet (please test): speed and memory on the real scanner for large areas, and whether the RAW area
+  lines up exactly with a normal scan of the same crop.
+* Scan list entries keep their own file format, so a list can mix RAW and normal scans.
+
+How to test 0.1.11
+-------------------------------------------
+1. A 35 mm slide in T 35mm, Preview, draw a crop, 2000 dpi, Format TIFF, Scan. Then Format "RAW 16-bit TIFF",
+   Scan again (same crop). Compare the two files in Photoshop: same size, same orientation, same area?
+2. The same with a negative (RAW stays a negative).
+3. A gang mask (e.g. 4 T35mm H) with several frames: Preview (all frames), switch frames with the Frame box, put
+   crops from two frames into the scan list, Scan list.
+4. If you like: a large RAW (4 x 5 or 120 at a high resolution) and note how long it takes.
+5. Send the Logs folder (the newest folders), as before.
+
+
+New in 0.1.10
+-------------
+* Scan list: several crops of one preview scanned one after the other. Draw a crop, set resolution, scale and file
+  name, press "Add crop to list" (the file name then counts up); repeat; press "Scan list". The listed crops are
+  drawn on the preview (dotted, numbered). Each entry gets its own allowed-range check and is scanned exactly like
+  a single scan; mode, media, format and tables are the window's. The list stops at the first problem.
+* The window remembers its settings between starts (smart342.ini next to the program): original, cassette, mode,
+  media, resolution, scale, mirror, format, crop, file name and table choices.
+* The file name counts up after each saved scan (scan001.tif -> scan002.tif).
+* The status line shows the driver's own progress (percent) and messages ("Switching lamps." ...).
+* Negatives: the preview is shown inverted, so the picture can be judged and cropped (display only - the scan is
+  made by the original program as always).
+* Output size below 10 MB is shown with one decimal.
+
+New in 0.1.9
+------------
+* Sharpness and Colour table can be chosen. The lists are read from the original program's own Setup window, so
+  they hold exactly what it offers for the current Mode and Media, for example
+    Sharpness:    S_Default (std), No Sharp, S_Harsh_B, S_Smooth_B
+    Colour table: RGB  - POS_Default (std), ICC_RGB, LUTID_RGB, Monitor
+                  CMYK - POS_Default (std) and 14 more (SMART1A ... SMART_RF5A, ICC_CMYK, LUT.ID, NEG1, lutid.crt)
+                  B/W  - BW_Default (std), lut_bw1, lut_bw2
+  "(std)" marks the original's standard table. Untouched, nothing is sent and the original uses what its own
+  settings hold. Checked in the simulator: a chosen table changes the tables the driver loads into the scanner's
+  image processor for the scan (sharpness table, colour look-up tables) - working memory, not the scanner's stored
+  parameters; the safety interlock is unchanged. A name the original does not offer is never sent (it would make
+  the original fail at scan time with "Cannot open file").
+* Film type for negatives: with Media = Negative the box next to it lists the original's film types (N_Default and
+  10 film-specific ones, e.g. AutoKOGold1, AutoFujiHG1, AutoVPS). It is chosen the way a Mac user chooses it (the
+  original's popup and its own handler). The simulator cannot show the effect (its test pattern is not a negative),
+  so please try it on a real negative: the same frame with N_Default and with your film's type.
+* Fixed: started a second time from the same folder, the original could look for its tables (ScitexTables) in
+  the wrong folder, because the Mac folder numbers it stores in its preferences changed from start to start (seen
+  in the simulator; your hardware logs so far were all first starts in a fresh folder, where it finds them). Folder
+  numbers are now kept from start to start (file .dirids.txt in the Volume), as on a real Mac disk. If a folder
+  already holds front-end preferences from an earlier version ('342 application prefs': window positions, last
+  settings), they are set aside once as '342 application prefs (before 0.1.9)' and the program makes new ones.
+  The scanner's parameters (Smart342.Prefs) are not touched.
+* Two harmless answers of the original are no longer shown in the log: "Not found name of Sharp/Color Table" (its
+  scripting reports an accepted table that way - a reversed test in its code) and "change of width/height not
+  legal" (its answer when the crop is sent again unchanged).
+* Mirror is now on the Scale line (more room for the new choices).
+
+New in 0.1.8
+------------
+* Resolution and scale are now really used. Up to 0.1.7 every scan came out at 12 pixels/mm (304.8 dpi) and
+  100 %, whatever was entered: your scans so far are all tagged 304.8 dpi. Found in the original front end: the
+  scripting interface stores the resolution, but when the scan starts (TSetUp::GetScanParams) the program reads it
+  again from its Setup window's resolution and scale fields, which nobody fills in when it runs without its
+  window. 0.1.8 puts the entered values into exactly those two reads - what typing them into the Mac window did.
+  Checked: 1200 dpi on a 24 x 36 mm crop gives 1134 x 1701 pixels, 2000 dpi gives 1890 x 2835 (simulator).
+* Allowed range. After a preview, and whenever the crop or scale changes, the window asks the original program
+  which resolutions it accepts for that cassette and crop (its own "The active crop is beyond the limits of the
+  scanner" check; nothing is sent to the scanner). It is shown under the resolution:
+  "Allowed: 70 - 2675 dpi" plus the output size in pixels and MB. Scan refuses a value outside the range.
+  The upper limit depends on the cassette's lens: T 35mm about 2675 dpi; 4 T35mm H about 8200 dpi (from your
+  real preview of 18:42).
+* Resolution box: type any value or pick one from the list; "Max" sets the highest allowed value.
+* The log shows the resolution sent with each scan ("Resolution sent: 2000.0 dpi (78.7402 pixels/mm)").
+* Scale (%): the output size is crop x scale; the file is tagged with the resolution (e.g. 10 mm at 50 % and
+  1200 dpi = 236 pixels, 1200 dpi).
+* Depth stays 8 bits per channel: that is what the original 2.2.0 delivers (see 0.1.7).
+
+New in 0.1.7
+------------
+* Mode menu corrected: Color CMYK, Color RGB (now the default), Greyscale (B/W). The original's scripting values
+  select the Setup window's Mode items 1-3, and in 2.2.0 item 2 is "Color RGB" and item 3 "B/W": 0.1.6 labelled
+  them "B/W" and "Line-art". RGB gives TIFF with 3 x 8 bit, Greyscale 1 x 8 bit.
+* Output depth: the original 2.2.0 writes 8 bits per channel in every format (the TIFF writer in the driver puts
+  BitsPerSample = 8 for each channel; the image processor delivers finished 8-bit pixels).
+
+New in 0.1.6
+------------
+* The preview is now shown the way the original program shows it: for transparencies mirrored left-right
+  relative to the scanner's preview data (the front end's display_is_mirror_to_PM: mirrored for the transparent
+  mount). It now has the same orientation as the final scans, and the crop is drawn in the same coordinates the
+  original uses. Checked on your real scans: the 19:46 crop at Left 0 came from the right edge of the raw preview
+  data (= the left edge of the mirrored display), and your 20:23 scan is the mirror image of the raw preview.
+* No more flicker while drawing the crop: the preview is scaled once and the window is drawn off-screen.
+* The log shows the crop that was sent with each scan ("Crop sent: Left .. Top .. Width .. Height .. mm").
+
+New in 0.1.5
+------------
+* Draw the crop on the preview: drag a rectangle over the area you want; Width/Height/Left/Top (mm) are filled
+  in and "Crop (mm)" is ticked. Typed values are shown as the yellow rectangle too, so you can fine-tune them.
+  The preview's size in mm comes from the driver's own preview parameters (B2F_PreviewParameters): the front end
+  places the preview at crop position 0,0, so Left/Top are millimetres from the preview's top-left corner.
+  Checked against your real scan of 19:46 (24 x 36 mm at 0,0), which shows exactly the top-left area of that preview.
+  Precision of a drag: one screen pixel of the preview (about 0.16 mm at the usual window size).
+
+New in 0.1.4
+------------
+* "Scan saved" now waits for the driver's own "final scan finished" message. In 0.1.3 the window could decide a
+  scan was finished while the driver was still preparing it (on the real scanner, one second after Scan was
+  pressed) and moved a file of the same name that was still in the Mac volume from an earlier run.
+* Before a scan starts, a file with the same name still in the Mac volume is moved to Scans\ first, marked
+  "(left from an earlier run)", so it can never be mistaken for the new scan.
+
+New in 0.1.3
+------------
+* Preview fixed. The scanner's preview data was correct in 0.1.2, but the window read it with a fixed width of
+  512 pixels, which turned it into stripes. The program now takes the size from the driver's own record in the
+  preview file (for the 4 T35mm H cassette: 482 pixels x 698 scan lines) and checks it against the file size.
+* Deleting a Mac file now also deletes its resource fork (temporary files no longer leave '.rsrc' files behind).
+* Safety-interlock messages: every held-back command is reported; repeats are shown as one line with a count.
+
+New in 0.1.2
+------------
+* The scanner's own parameters are in the program's settings file (Volume\Smart342(L) V2.2.0\Smart342.Prefs).
+  0.1.1 stopped at start-up with "Incompatibility between scanner number in scanner (95171130) and scanner
+  number in Smart342.Prefs (96250969)": the settings file in the package came from the vendor archive (another
+  scanner). The scanner's parameter file was read from the scanner during the 0.1.1 start-up (the original driver
+  reads it at every start, read-only) and is in that log; 0.1.2 has it copied into Smart342.Prefs exactly the way
+  the original Calibration program's "Scanner(Flash Disk) --> Mac(Smart340.Prefs)" does it (the 11 scanner
+  parameter resources; the old file is kept as Smart342.Old). Nothing was or is written to the scanner.
+* Simulator (smart342.exe --simulate) now uses this scanner's parameter file and the answers the real scanner
+  gave, and runs behind the same safety interlock. Simulated scans of any size work.
+
+What this is
+------------
+The original Scitex Smart342(L) 2.2.0 software (the main program and the ScannerDriver, the same files
+that run in SheepShaver) running directly on Windows 10/11 x64. A built-in PowerPC emulator executes the
+original program code unchanged; the scanner is reached through the Adaptec card with Windows' own SCSI
+pass-through (the same call the relay used). No SheepShaver, VMware or relay is needed.
+
+The window replaces the Mac screens with a simple panel that drives the original program through its
+own built-in scripting interface: Original, Cassette, Mode, Media, Preview, resolution, format, crop and
+Scan. Everything the scanner does - start-up, light measurement, prescan, final scan, the output file -
+is done by the original Scitex code.
+
+SAFETY
+------
+* A safety interlock is always on. It sits between the original driver and the scanner and holds back
+  every command that would change what the scanner stores:
+    - writes to the motion board's NV-RAM (parameters, scanner number, motor constants, lamp timer,
+      status byte, light level),
+    - loading new firmware into the motion board,
+    - any flash-disk operation other than reading (so no Mac -> Scanner parameter copy can happen),
+    - any SCSI command the driver does not use in normal operation.
+  A held-back command is answered "done" so the program carries on; the log says
+  "SAFETY INTERLOCK: held back ...". The original driver checks the NV-RAM at every start-up and wants to
+  rewrite it whenever the checksum of the Mac-side parameters differs from the scanner's (that is what
+  happened on 23.09 with the donor prefs). With the interlock it can only report the difference
+  ("Laoding to NV_ram failed" in the log) - the scanner keeps its own parameters.
+* No calibration and no Service functions exist in this program.
+* The program must run as Administrator (Windows asks when you start it), like the relay did.
+* Windows may say the program is from an unknown publisher (it is not signed): More info -> Run anyway.
+
+How to use
+----------
+1. Unpack the whole folder somewhere, e.g.  C:\Users\SE\Desktop\Private\Scanners\Scitex Smart 342L\Smart342 for Windows
+   Keep the folder structure: smart342.exe, Volume\, Simulator\.
+2. Switch the scanner on and wait for the steady green light.
+3. Start smart342.exe (answer Yes to the Administrator question).
+   It finds the scanner on the Adaptec card by itself (it looks for SCITEX on SCSI ID 4).
+4. Wait for "Ready." at the bottom. The start-up takes about as long as on the Mac.
+   If the original program shows a message, it appears as a small window with its own buttons - answer
+   it as you would on the Mac.
+5. Choose Original / Cassette / Mode / Media and press Preview. The preview appears on the right.
+6. Set resolution (dpi) - the allowed range for the cassette and crop is shown under it -, file format and
+   file name. Drag a rectangle on the preview around the part you want
+   (or tick "Crop (mm)" and type width, height and the left/top offset); without the tick the program's own
+   default crop is used.
+   Sharpness and Colour table: leave them, or pick one of the original's tables (with Negative: also the film
+   type next to Media).
+7. Press Scan. (Several crops: "Add crop to list" for each, then "Scan list".) The finished file is moved to the Scans folder (date and time are put in front of the name).
+8. Close the window when done: the original program saves its settings and parks the scanner
+   (this takes a few seconds).
+
+Logs (please send these after the first test)
+---------------------------------------------
+Every start makes a folder in Logs\ named with the date and time. It contains
+  trace.txt       - everything the original programs did (text)
+  scsi-trace.bin  - every SCSI command and its data (same format as smart342-tracerelay)
+  ui-log.txt      - what the window showed
+Zip the folder and send it. It is what lets me compare the real scanner with the simulator.
+
+Try it without the scanner
+--------------------------
+  smart342.exe --simulate
+runs everything against a simulated scanner (a test pattern instead of a picture). It works on its own
+copy of the volume (Volume-simulator), so it never touches the real settings. The simulated scanner uses
+Simulator\flash14.bin (this scanner's parameter file) and Simulator\profile.txt (answers the real scanner gave).
+
+Folder contents
+---------------
+  smart342.exe          the program
+  Volume\               the Mac disk contents the original programs see (programs, prefs, tables)
+  Simulator\            parameter file and answers used by the simulated scanner only
+  Scans\                finished scans (created on first scan)
+  Logs\                 one folder per start
